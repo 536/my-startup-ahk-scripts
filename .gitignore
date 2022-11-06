@@ -1,0 +1,6 @@
+*
+!.gitignore
+!readme.md
+!startup.ahk
+!startup/
+!startup/**
