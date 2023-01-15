@@ -13,42 +13,44 @@ global CubeFileName, CubeDir, CubeExtension, CubeNameNoExt, CubeDrive
 global CubePathIcons := A_ScriptDir . "\" . CubeNameNoExt . "\icons\"
 global CubePathMenus := A_ScriptDir . "\" . CubeNameNoExt . "\menus\"
 global CubePathPlugins := A_ScriptDir . "\" . CubeNameNoExt . "\plugins\"
-global Cube_Bases, Cube_Ext, Cube_RE, Cube_Translations
+global Cube_Bases, Cube_Ext, Cube_RE
 global Cube, CubeTypes
 global CubeAutoClip
 global CubeIcon
 global CubeIconSize := A_ScreenDPI / 6
 
-Gosub, Label_SetAuto
-Gosub, Label_CreateMenu_RE
-Gosub, Label_CreateMenu_Ext
-Gosub, Label_CreateMenu_Bases
+MenuState()
+InitMenuRe()
+InitMenuExt()
+InitMenuBases()
+
+OnClipboardChange("ShowMenu")
 Return
 
-Label_SetAuto:
+MenuState() {
     CubeAutoClip := !CubeAutoClip
     CubeIcon := CubePathIcons . (CubeAutoClip?"on":"off") ".png"
     Menu, Tray, Icon, % CubeIcon, , % CubeIconSize
-Return
+}
 
-Label_CreateMenu_RE:
+InitMenuRe() {
     For REType, Regulations in Cube_RE
     {
         For Index, Line in IniRead(GetMenuPath("RE\" . REType))
         {
-            Label := Func("Cube_Run").Bind(Line[2])
+            Label := Func("CubeRun").Bind(Line[2])
             Menu, % REType, Add, % Line[1], % Label
             Menu, % REType, Icon, % Line[1], % GetIcon(Line), , % CubeIconSize
         }
     }
-Return
+}
 
-Label_CreateMenu_Ext:
+InitMenuExt() {
     For Extension, ExtensionTypes in Cube_Ext
     {
         For Index, Line in IniRead(GetMenuPath("Ext\" . Extension))
         {
-            Label := Func("Cube_Run").Bind(Line[2])
+            Label := Func("CubeRun").Bind(Line[2])
             Menu, % Extension, Add, % Line[1], % Label
             Menu, % Extension, Icon, % Line[1], % GetIcon(Line), , % CubeIconSize
         }
@@ -59,27 +61,27 @@ Label_CreateMenu_Ext:
             {
                 For Index, Line in IniRead(GetMenuPath(ExtensionType))
                 {
-                    Label := Func("Cube_Run").Bind(Line[2])
+                    Label := Func("CubeRun").Bind(Line[2])
                     Menu, % ExtensionType, Add, % Line[1], % Label
                     Menu, % ExtensionType, Icon, % Line[1], % GetIcon(Line), , % CubeIconSize
                 }
             }
         }
     }
-Return
+}
 
-Label_CreateMenu_Bases:
+InitMenuBases() {
     For Index, Base in Cube_Bases
     {
         For Index, Line in IniRead(GetMenuPath(Base))
         {
-            Label := Func("Cube_Run").Bind(Line[2])
+            Label := Func("CubeRun").Bind(Line[2])
             Menu, % Base, Add, % Line[1], % Label
             If Line[1]
                 Menu, % Base, Icon, % Line[1], % GetIcon(Line), , % CubeIconSize
         }
     }
-Return
+}
 
 IniRead(ini, section:="Cube") {
     Commands := []
@@ -88,10 +90,9 @@ IniRead(ini, section:="Cube") {
     {
         Commands.push(StrSplit(A_LoopField, "=", 1))
     }
-Return Commands
+    Return Commands
 }
-
-Cube_Run(IniValue, ItemName, ItemPos, MenuName) {
+CubeRun(IniValue, ItemName, ItemPos, MenuName) {
     If GetKeyState("Ctrl", "P")
     {
         Run, % "Edit " GetPluginPath(IniValue)
@@ -110,24 +111,13 @@ Cube_Run(IniValue, ItemName, ItemPos, MenuName) {
     }
     SplitPath, % GetPluginPath(IniValue), OutFileName, OutDir
     Run, % GetPluginPath(IniValue), % OutDir, UseErrorLevel, OutputVarPID
-    ; If (ErrorLevel = 0)
-    ; {
-    ;     VarSetCapacity(CubeStruct, 3*A_PtrSize, 0)
-    ;     CubeInBytes := (StrLen(Cube)+1)*(A_IsUnicode?2:1)
-    ;     NumPut(CubeInBytes, CubeStruct, A_PtrSize)
-    ;     NumPut(&Cube, CubeStruct, 2*A_PtrSize)
-    ;     static WM_COPYDATA := 0x004A
-    ;     WinWait, % "ahk_pid " OutputVarPID
-    ;     SendMessage, WM_COPYDATA, 0, &CubeStruct,, % "ahk_pid " OutputVarPID
-    ; }
 }
-
 GetPluginPath(PluginName) {
     If FileExist(CubePathPlugins . PluginName . "\" . PluginName . ".ahk")
         Return """" CubePathPlugins . PluginName . "\" . PluginName . ".ahk"""
 }
 GetMenuPath(Type) {
-Return CubePathMenus . Type . ".ini"
+    Return CubePathMenus . Type . ".ini"
 }
 GetIcon(icon) {
     If (icon = ".ico")
@@ -147,48 +137,13 @@ GetIcon(icon) {
             Return % "HICON:" NumGet(FileInfo, 0, "Ptr")
     }
 }
-
-CapsLock Up::
-    If CubeAutoClip
-    {
-        Clipboard := ""
-        Send, ^c
-        ClipWait, 0.5, 0
-        If Not ErrorLevel
-            Gosub, Label_ShowMenu
-    }
-    else
-        Gosub, Label_ShowMenu
-Return
-+CapsLock::Gosub, Label_SetAuto
-^CapsLock::SetCapsLockState % !GetKeyState("CapsLock", "T")
-
-Label_ShowMenu:
-    If (Cube != Trim(Clipboard, " `t`n"))
-    {
-        Cube := Trim(Clipboard, " `t`n")
-        GetCubeTypes()
-    }
-    Menu, Menu, Show
-Return
-
 GetCubeTypes() {
     CubeTypes := []
-    If Not Cube
-        Return
-    Else If DllCall("IsClipboardFormatAvailable", "UInt", 15) ; file
+    If DllCall("IsClipboardFormatAvailable", "UInt", 15) ; file
     {
-        CubeTypes.push("FILE")
         If InStr(FileExist(Cube), "D")
-        {
-            CubeTypes.push(RegExMatch(Cube,"^.:\\$") ? "DRIVE":"FOLDER")
-            Return OrganizeMenu()
-        }
-        If InStr(Cube, "`n")
-        {
-            CubeTypes.push("FILES")
-            Return OrganizeMenu()
-        }
+            CubeTypes.push("FOLDER")
+        CubeTypes.push("FILE")
         SplitPath, Cube, , , OutExtension
         If OutExtension
         {
@@ -199,47 +154,33 @@ GetCubeTypes() {
                     CubeTypes.push(Extension)
                     For Index, ExtensionType in ExtensionTypes
                         CubeTypes.push(ExtensionType)
-                    Return OrganizeMenu()
                 }
             }
         }
-        Return OrganizeMenu()
     }
-    Else If DllCall("IsClipboardFormatAvailable", "UInt", 1) ; text
+
+    CubeTypes.push("TEXT")
+    If DllCall("IsClipboardFormatAvailable", "UInt", 1) ; text
     {
-        CubeTypes.push("TEXT")
-        If InStr(Cube, "`n")
-        {
-            CubeTypes.push("TEXTS")
-            Return OrganizeMenu()
-        }
         For REType, Regulations in Cube_RE
         {
             For Index, Regulation in Regulations
             {
                 If RegExMatch(Cube, Regulation)
-                {
                     CubeTypes.push(REType)
-                    Return OrganizeMenu()
-                }
             }
         }
-        Return OrganizeMenu()
     }
+    Return OrganizeMenu()
 }
 
 OrganizeMenu() {
     Menu, Menu, Add
     Menu, Menu, DeleteAll
-    FirstMenuName := (StrLen(Cube) > 17)?SubStr(Cube, 1, 17) . "...":Cube
-    Menu, Menu, Add, % FirstMenuName, OnExit
-    Menu, Menu, Disable, % FirstMenuName
-    Menu, Menu, Icon, % FirstMenuName, % CubeIcon, , % CubeIconSize
-    Menu, Menu, Add
     For Index, CubeType in CubeTypes
     {
-        MenuItemName := Cube_Translations[CubeType]
-        MenuItemName := MenuItemName?MenuItemName:CubeType
+        MenuItemName := (StrLen(Cube) > 17)?"..." . SubStr(Cube, -16, 17):Cube
+        MenuItemName := "[" . CubeType . "]`t" . MenuItemName
         Menu, Menu, Add, % MenuItemName, % ":" CubeType
         Menu, Menu, Icon, % MenuItemName, % GetIcon(CubeType), , % CubeIconSize
         If (Index != CubeTypes.Length())
@@ -256,7 +197,23 @@ AHK_NOTIFYICON(wParam, lParam) {
     If (lParam = WM_LBUTTONUP)
         Run, % CubeDir
     Else If (lParam = WM_RBUTTONUP)
-        Gosub, Label_SetAuto
+        MenuState()
     Else If (lParam = WM_MBUTTONUP)
         Reload
 }
+
+ShowMenu() {
+    If GetKeyState("CapsLock", "P")
+    {
+        If (Cube != Trim(Clipboard, " `t`n"))
+        {
+            Cube := Trim(Clipboard, " `t`n")
+            GetCubeTypes()
+        }
+        Menu, Menu, Show
+    }
+}
+
+~CapsLock::^c
++CapsLock::MenuState()
+^CapsLock::SetCapsLockState % !GetKeyState("CapsLock", "T")

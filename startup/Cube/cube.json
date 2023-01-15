@@ -1,34 +1,12 @@
 {
     "type": [
-        "DRIVE",
         "FOLDER",
         "FILE",
-        "FILES",
-        "TEXT",
-        "TEXTS"
+        "TEXT"
     ],
     "extension": {
-        ".png": [
-            "_PICTURE"
-        ],
-        ".ico": [
-            "_PICTURE"
-        ],
-        ".jpg": [
-            "_PICTURE"
-        ],
-        ".ahk": [],
-        ".js": [],
         ".html": [],
-        ".css": [],
         ".py": [],
-        ".txt": [],
-        ".ini": [],
-        ".yaml": [],
-        ".yml": [],
-        ".conf": [],
-        ".config": [],
-        ".xml": [],
         ".exe": []
     },
     "regex": {
@@ -57,31 +35,6 @@
         "^ip": [
             "^(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]\\d|\\d)\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]\\d|\\d)\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]\\d|\\d)\\.(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]\\d|\\d)$"
         ]
-    },
-    "transtation": {
-        "_PICTURE": "PICTURE",
-        "_CONFIG": "CONFIG",
-        "DRIVE": "DRIVE",
-        "FOLDER": "FOLDER",
-        "FILE": "FILE",
-        "FILES": "FILES",
-        "TEXT": "TEXT",
-        "TEXTS": "TEXTS",
-        "^git": "GIT",
-        "^registry": "REGISTRY",
-        "^color": "COLOR",
-        "^CLSID": "CLSID",
-        "^url": "URL"
-    },
-    "exe": {
-        "Chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-        "Edge": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-        "Firefox": "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
-        "IE": "C:\\Program Files\\Internet Explorer\\iexplore.exe",
-        "Notepad": "C:\\Windows\\System32\\notepad.exe",
-        "SublimeText": "C:\\Program Files\\Sublime Text\\sublime_text.exe",
-        "VSCode": "C:\\Users\\holo\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
-        "Pycharm": "C:\\Program Files\\JetBrains\\PyCharmCE\\bin\\pycharm.bat"
     },
     "url": {
         "Amazon": "http://www.amazon.com/s/ref=nb_sb_noss?field-keywords=%s",

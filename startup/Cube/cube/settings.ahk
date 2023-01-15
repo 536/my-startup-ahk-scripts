@@ -2,7 +2,7 @@
 
 Try
 {
-    _ := JSON.Load(FileOpen("cube.json", "r", "CP936").Read())
+    _ := JSON.Load(FileOpen("cube.json", "r").Read())
 }
 Catch
 {
@@ -13,6 +13,4 @@ Catch
 global Cube_Bases := _.type
 global Cube_Ext := _.extension
 global Cube_RE := _.regex
-global Cube_Translations := _.transtation
-global Cube_EXE := _.exe
 global Cube_URL := _.url

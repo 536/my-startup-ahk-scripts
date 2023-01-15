@@ -63,3 +63,4 @@
 :*:ifocnfig::ifconfig
 :*:dokcer::docker
 :*:docekr::docker
+:*:clone::clone

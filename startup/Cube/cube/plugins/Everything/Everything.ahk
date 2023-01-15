@@ -1,5 +1,1 @@
-#Include, .\cube\settings.ahk
-
-EnvGet, EVERYTHING, EVERYTHING
-
-Run, % EVERYTHING " -search """ Clipboard """"
+Run, % A_ComSpec " /C everything -search """ Clipboard """", , Hide
