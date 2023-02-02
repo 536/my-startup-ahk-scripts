@@ -6,11 +6,11 @@ SetTitleMatchMode RegEx
 Menu, Tray, UseErrorLevel
 Menu, Tray, Icon, imageres.dll,307
 
-Loop, Parse, % "Path||Edit|Reload||Pause|Suspend||Exit||History|Variables|HotKeys|Info||Help", |
+Loop, Parse, % "Path||Edit|Reload||Pause|Suspend||Exit||History|Variables|HotKeys|Info", |
 {
     Menu, LV_Menu, Add, % A_LoopField, MenuHandler
     If (A_LoopField == "Path")
-        Menu, LV_Menu, Icon, % A_LoopField, imageres.dll,204
+        Menu, LV_Menu, Icon, % A_LoopField, imageres.dll,266
     If (A_LoopField == "Edit")
     {
         RegRead, EDOTOR, % "HKCR\AutoHotkeyScript\Shell\Edit\Command"
@@ -26,8 +26,6 @@ Loop, Parse, % "Path||Edit|Reload||Pause|Suspend||Exit||History|Variables|HotKey
         Menu, LV_Menu, Icon, % A_LoopField, imageres.dll,162
     If (A_LoopField == "Info")
         Menu, LV_Menu, Icon, % A_LoopField, imageres.dll,77
-    If (A_LoopField == "Help")
-        Menu, LV_Menu, Icon, % A_LoopField, %A_WinDir%\hh.exe, 1
 }
 SetTimer, Label_LV_REFRESH, 500
 OnMessage(0x404, "AHK_NOTIFYICON")
@@ -133,32 +131,8 @@ MenuHandler(ItemName := "", ItemPos := "", MenuName := "") {
                 }
             }
         }
-        Else If (ItemName == "Reload")
+        Else
             SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "Suspend")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "Pause")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "Exit")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "Edit")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "History")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "Variables")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "HotKeys")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "Info")
-            SendMessage, 0x111, % cmd[ItemName], , , % " ahk_id " this_id
-        Else If (ItemName == "Help")
-        {
-            SplitPath, A_AhkPath, , OutDir
-            HELP_FILE := OutDir . "\AutoHotkey.chm"
-            If FileExist(HELP_FILE)
-                Run, % HELP_FILE, , Max
-            Break
-        }
     }
 }
 
