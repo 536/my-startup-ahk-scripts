@@ -218,7 +218,7 @@ CapsLockPressed() {
     MyClipBoard := Trim(Clipboard)
     Clipboard := ClipBoardBak
 
-    If Not ErrorLevel
+    If Not ErrorLevel And MyClipBoard
     {
         Config := new IniConfig("settings.ini")
         MenuCreate(Config)
