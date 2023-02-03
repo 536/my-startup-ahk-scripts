@@ -1,8 +1,6 @@
-#Include, .\cube\settings.ahk
-
-If (FileExist(Clipboard))
+If (FileExist(A_Args[1]))
 {
-    SplitPath, Clipboard, OutFileName, OutDir, OutExtension, , OutDrive
+    SplitPath, % A_Args[1], OutFileName, OutDir, OutExtension, , OutDrive
     If (OutDir = OutDrive)
         OutDir := OutDir "\"
     If (OutExtension = "exe")

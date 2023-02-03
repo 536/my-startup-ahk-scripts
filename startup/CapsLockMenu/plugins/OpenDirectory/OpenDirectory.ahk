@@ -1,1 +1,2 @@
-Run, % A_ComSpec " /C notepad.exe """ A_Args[1] """"
+exec := "explorer.exe"
+Run, % A_ComSpec " /C " exec " """ A_Args[1] """", , Hide

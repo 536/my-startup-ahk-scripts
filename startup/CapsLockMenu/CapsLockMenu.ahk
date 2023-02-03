@@ -3,16 +3,46 @@
 
 SetWorkingDir % A_ScriptDir
 SetCapsLockState, AlwaysOff
-; Menu, Tray, NoStandard
-Menu, MainMenu, UseErrorLevel
+
 Menu, Tray, NoMainWindow
 Menu, Tray, Icon, % "icons\images.dll\imageres-234.ico"
+Menu, MainMenu, UseErrorLevel
 
-global Cube, CubeBefore
-
+Global Cube, CubeBefore
 Global Settings := IniReadSections("settings.ini")
-Global RegularExpression := IniReadArrayValue("Variable.RegularExpression")
 Return
+;===============================================================================
+class Config
+{
+    __New(Ini)
+    {
+        this.Ini := Ini
+
+        this.sections := {}
+        IniRead, OutputVarSectionNames, % this.Ini
+        this.SectionNames := StrSplit(OutputVarSectionNames, "`n")
+        For _, SectionName in this.SectionNames
+        {
+            IniRead, Section, % this.Ini, % this.SectionName
+            this.sections[this.SectionName] := StrSplit(Section, "`n")
+        }
+    }
+
+    ReadArrayValue(Section)
+    {
+        Array := {}
+        For _, Line in this.sections[Section]
+        {
+            KeyValue := StrSplit(Line, "=", 1)
+            If !(Array.HasKey(KeyValue[1]))
+            {
+                Array[KeyValue[1]] := []
+            }
+            Array[KeyValue[1]].Push(KeyValue[2])
+        }
+        Return Array
+    }
+}
 ;===============================================================================
 TrayIconMessage(wParam, lParam) {
     Static WM_USER = 0x0400
@@ -62,35 +92,65 @@ MenuCreate()
         {
             Menu, % SectionName, Add
             Menu, % SectionName, DeleteAll
+            SubMenu := false
             For _, Line in Settings.Sections[SectionName]
             {
                 KeyValue := StrSplit(Line, "=", 1)
-                Label := Func("MenuRun").Bind(KeyValue[2])
-                ; SectionName: Menu.Folder
-                ; KeyValue[1]: Edit by &SublimeText
-                ; KeyValue[2]: [SublimeText]
-                RegExMatch(KeyValue[2], "O)^\[(?<PLUGIN>.+)\](?<PARAMETER>.+)?", Out)
-                Menu, % SectionName, Add, % KeyValue[1], % Label
-                Menu, % SectionName, Icon, % KeyValue[1], % GetPluginIcon(Out["PLUGIN"])
+                If (SubStr(KeyValue[1], 1, 1) = ">")
+                {
+                    MenuName := SubStr(KeyValue[1], 2)
+                    If MenuName
+                    {
+                        If KeyValue[2]
+                        {
+                            Label := Func("MenuRun").Bind(KeyValue[2])
+                            Menu, % SectionName SubMenu, Add, % MenuName, % Label
+                            Menu, % SectionName SubMenu, Icon, % MenuName, % GetPluginIcon(KeyValue[2])
+                        }
+                        Else
+                        {
+                            SubMenu := KeyValue[1]
+                        }
+                    }
+                    Else
+                    {
+                        Menu, % SectionName SubMenu, Add
+                    }
+                }
+                Else
+                {
+                    If SubMenu
+                    {
+                        Menu, % SectionName, Add, % SubStr(SubMenu, 2), % ":" SectionName SubMenu
+                    }
+                    SubMenu := false
+                    Label := Func("MenuRun").Bind(KeyValue[2])
+                    ; SectionName: Menu.Folder
+                    ; KeyValue[1]: Edit by &SublimeText
+                    ; KeyValue[2]: [SublimeText]([sublime_text.ico])?...
+                    Menu, % SectionName, Add, % KeyValue[1], % Label
+                    Menu, % SectionName, Icon, % KeyValue[1], % GetPluginIcon(KeyValue[2])
+                }
             }
         }
     }
 }
 MenuRun(IniValue, ItemName, ItemPos, MenuName) {
     ; MsgBox % "IniValue: " IniValue "`nItemName: " ItemName "`nItemPos: " ItemPos "`nMenuName: " MenuName
-    ; IniValue: [Plugin]AHKHelp
+    ; IniValue: [AHKHelp]([AHKHelp.ico])?...
     ; ItemName: AHK &Help
     ; ItemPos: 3
     ; MenuName: Menu.Text
-    If RegExMatch(IniValue, "O)^\[(?<PLUGIN>.+)\](?<PARAMETER>.+)?", Out)
+    If RegExMatch(IniValue, "O)^\[(?<NAME>.+?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
     {
         EnvGet, PathExt, PATHEXT
-        For i, Ext in StrSplit(PathExt, ";")
+        PathExt := StrSplit(PathExt ";.AHK", ";")
+        For i, Ext in PathExt
         {
-            PluginPath := A_ScriptDir "\plugins\" Out["PLUGIN"] "\" Out["PLUGIN"] Ext
+            PluginPath := A_ScriptDir "\plugins\" Out["NAME"] "\" Out["NAME"] Ext
             If FileExist(PluginPath)
             {
-                OutPluginDir := A_ScriptDir "\plugins\" Out["PLUGIN"]
+                OutPluginDir := A_ScriptDir "\plugins\" Out["NAME"]
 
                 If GetKeyState("Shift", "P") {
                     Run, % "*RunAs " PluginPath " " Out["PARAMETER"] " " Cube, % OutPluginDir, UseErrorLevel
@@ -111,7 +171,7 @@ MenuShow() {
 
         Menu, MainMenu, Add
         Menu, MainMenu, DeleteAll
-        MenuItemName := (StrLen(Cube) > 50)?SubStr(Cube, 1, 47) "...":Cube
+        MenuItemName := (StrLen(Cube) > 30)?SubStr(Cube, 1, 27) "...":Cube
         Menu, MainMenu, Add, % MenuItemName, MenuShow
         Menu, MainMenu, Icon, % MenuItemName, % "icons\images.dll\imageres-234.ico"
         For Index, cType in GetTypes()
@@ -144,23 +204,13 @@ GetTypes() {
             _Types.push("Menu.File")
         }
 
-        SplitPath, Cube, , , OutExtension
-        For _, SectionName in Settings.SectionNames
-        {
-            If (SectionName = "Menu.File.Extension." OutExtension)
-            {
-                _Types.push(SectionName)
-                Break
-            }
-        }
-
-        For REType, REs in RegularExpression
+        For REType, REs in IniReadArrayValue("RegularExpression")
         {
             For _, RE in REs
             {
                 If RegExMatch(Cube, RE)
                 {
-                    _Types.push("Menu.Text.RegularExpression." REType)
+                    _Types.push(REType)
                     Break
                 }
             }
@@ -170,22 +220,30 @@ GetTypes() {
     return _Types
 }
 ;===============================================================================
-GetFolderIcon(Folder) {
-    Return % "imageres.dll,204"
-}
 GetFileIcon(File) {
     VarSetCapacity(FileInfo, FileSize:=A_PtrSize + 688)
     If DllCall("shell32\SHGetFileInfoW", "Wstr", File, "UInt", 0, "Ptr", &FileInfo, "UInt", FileSize, "UInt", 0x110)
     {
         Return % "HICON:" NumGet(FileInfo, 0, "Ptr")
     }
-    Return GetFileIcon(A_AhkPath)
+    Return A_AhkPath
 }
-GetPluginIcon(PluginName) {
-    PluginPath := A_ScriptDir "\plugins\" PluginName
-    For Key, Value in [".ico", ".png"]
+GetPluginIcon(MenuName) {
+    RegExMatch(MenuName, "O)^\[(?<NAME>.+?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
+    If Out["ICON"] {
+        Icon := A_ScriptDir "\icons\" Out["ICON"]
+        ; msgbox % Icon
+        If FileExist(Icon)
+        {
+            Return Icon
+        }
+        Return Out["ICON"]
+    }
+    PluginPath := A_ScriptDir "\plugins\" Out["NAME"]
+    For Key, Value in [".ico", ".png", ".exe"]
     {
-        Icon := PluginPath "\" PluginName Value
+        Icon := PluginPath "\" Out["NAME"] Value
+        ; msgbox % Icon
         If FileExist(Icon)
         {
             Return Icon

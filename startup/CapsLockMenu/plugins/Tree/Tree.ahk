@@ -1,9 +1,7 @@
-#Include, .\cube\settings.ahk
-
-If (FileExist(Clipboard)="D")
-    Run, % A_ComSpec " /k cd /d """ Clipboard """ && tree /f """ Clipboard """"
-Else If (FileExist(Clipboard)!="D")
+If (FileExist(A_Args[1])="D")
+    Run, % A_ComSpec " /k cd /d """ A_Args[1] """ && tree /f"
+Else If (FileExist(A_Args[1])!="D")
 {
-    SplitPath, Clipboard, OutFileName, OutDir
-    Run, % A_ComSpec " /k cd /d """ OutDir """ && tree /f """ OutDir """"
+    SplitPath, % A_Args[1], OutFileName, OutDir
+    Run, % A_ComSpec " /k cd /d """ OutDir """ && tree /f"
 }

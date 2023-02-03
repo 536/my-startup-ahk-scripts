@@ -1,5 +1,3 @@
-#Include, .\cube\settings.ahk
-
 title := "Manually choose a folder..."
 Menu, % A_ScriptName, Add, % title, Manually
 Menu, % A_ScriptName, Icon, % title, % A_AhkPath
@@ -28,14 +26,14 @@ Manually:
     if folder =
         MsgBox, , , You didn't select a folder., 3 ; exit after 3s
     else
-        git_clone(Clipboard, folder)
+        git_clone(A_Args[1], folder)
 Return
 
 Label_Clone:
     WinActivate % "ahk_id " ListOfExplorer[A_ThisMenuItem]
     ControlGetText, folder, ToolbarWindow323, % "ahk_id " ListOfExplorer[A_ThisMenuItem]
     RegExMatch(folder, "(\w:.*$)", folder)
-    git_clone(Clipboard, folder)
+    git_clone(A_Args[1], folder)
 Return
 
 git_clone(url, folder) {

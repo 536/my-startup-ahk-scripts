@@ -1,13 +1,10 @@
-#Include, .\cube\settings.ahk
-
-If (FileExist(Clipboard)="D")
+If (FileExist(A_Args[1])="D")
 {
-    MsgBox, % Clipboard
-    Run, % A_ComSpec " /c cd /d """ Clipboard """ && browser-sync start --server --files ""**"""
+    Run, % A_ComSpec " /c cd /d """ A_Args[1] """ && browser-sync start --server --files ""**"""
 }
-Else If (FileExist(Clipboard)!="D")
+Else If (FileExist(A_Args[1])!="D")
 {
-    SplitPath, Clipboard, OutFileName, OutDir,,, OutDrive
+    SplitPath, % A_Args[1], OutFileName, OutDir,,, OutDrive
     If (OutDir = OutDrive)
         Run, % A_ComSpec " /c cd /d """ OutDir "\"" && browser-sync start --server --files """ OutFileName """"
     Else
