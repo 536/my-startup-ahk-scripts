@@ -8,30 +8,29 @@ Menu, Tray, NoMainWindow
 Menu, Tray, Icon, % "icons\images.dll\imageres-234.ico"
 Menu, MainMenu, UseErrorLevel
 
-Global Cube, CubeBefore
-Global Settings := IniReadSections("settings.ini")
+Global MyClipBoard
 Return
 ;===============================================================================
-class Config
+class IniConfig
 {
     __New(Ini)
     {
         this.Ini := Ini
 
-        this.sections := {}
+        this.Sections := {}
         IniRead, OutputVarSectionNames, % this.Ini
         this.SectionNames := StrSplit(OutputVarSectionNames, "`n")
         For _, SectionName in this.SectionNames
         {
-            IniRead, Section, % this.Ini, % this.SectionName
-            this.sections[this.SectionName] := StrSplit(Section, "`n")
+            IniRead, Section, % this.Ini, % SectionName
+            this.Sections[SectionName] := StrSplit(Section, "`n")
         }
     }
 
     ReadArrayValue(Section)
     {
         Array := {}
-        For _, Line in this.sections[Section]
+        For _, Line in this.Sections[Section]
         {
             KeyValue := StrSplit(Line, "=", 1)
             If !(Array.HasKey(KeyValue[1]))
@@ -58,90 +57,82 @@ TrayIconMessage(wParam, lParam) {
     }
 }
 ;===============================================================================
-IniReadSections(IniFile) {
-    Sections := {}
-    IniRead, OutputVarSectionNames, % IniFile
-    SectionNames := StrSplit(OutputVarSectionNames, "`n")
-    For _, SectionName in SectionNames
+MenuShow(Config) {
+    Menu, MainMenu, Add
+    Menu, MainMenu, DeleteAll
+    MenuItemName := (StrLen(MyClipBoard) > 30)?SubStr(MyClipBoard, 1, 27) "...":MyClipBoard
+    Menu, MainMenu, Add, % MenuItemName, MenuShow
+    Menu, MainMenu, Icon, % MenuItemName, % "icons\images.dll\imageres-234.ico"
+    For Index, cType in GetTypes(Config)
     {
-        IniRead, Section, % IniFile, % SectionName
-        Sections[SectionName] := StrSplit(Section, "`n")
-    }
-
-    Return {Sections: Sections, SectionNames: SectionNames}
-}
-IniReadArrayValue(section) {
-    Array := {}
-    For _, Line in Settings.Sections[section]
-    {
-        KeyValue := StrSplit(Line, "=", 1)
-        If !(Array.HasKey(KeyValue[1]))
-        {
-            Array[KeyValue[1]] := []
+        Menu, MainMenu, Add
+        Menu, MainMenu, Add, % cType, % ":" cType
+        If RegExMatch(cType, "^Menu\.Folder(\.\w+)*$") {
+            Menu, MainMenu, Icon, % cType, % "icons\images.dll\imageres-265.ico"
+        } Else If RegExMatch(cType, "^Menu\.File(\.\w+)*$") {
+            Menu, MainMenu, Icon, % cType, % GetFileIcon(MyClipBoard), , % A_ScreenDPI / 6
+        } Else If RegExMatch(cType, "^Menu\.Text(\.\w+)*$") {
+            Menu, MainMenu, Icon, % cType, % "icons\images.dll\imageres-247.ico"
         }
-        Array[KeyValue[1]].Push(KeyValue[2])
     }
-    Return Array
+    Menu, MainMenu, Show
 }
-;===============================================================================
-MenuCreate()
+MenuCreate(Config)
 {
-    For _, SectionName in Settings.SectionNames
+    For _, SectionName in Config.SectionNames
     {
         If RegExMatch(SectionName, "^Menu\.(\w+(\.)?)+")
         {
             Menu, % SectionName, Add
             Menu, % SectionName, DeleteAll
-            SubMenu := false
-            For _, Line in Settings.Sections[SectionName]
+            SubMenuLine :=
+            For _, Line in Config.Sections[SectionName]
             {
-                KeyValue := StrSplit(Line, "=", 1)
-                If (SubStr(KeyValue[1], 1, 1) = ">")
+                MenuLine := StrSplit(Line, "=", 1)
+                If (SubStr(MenuLine[1], 1, 1) = ">")
                 {
-                    MenuName := SubStr(KeyValue[1], 2)
-                    If MenuName
+                    If SubMenuLine
                     {
-                        If KeyValue[2]
-                        {
-                            Label := Func("MenuRun").Bind(KeyValue[2])
-                            Menu, % SectionName SubMenu, Add, % MenuName, % Label
-                            Menu, % SectionName SubMenu, Icon, % MenuName, % GetPluginIcon(KeyValue[2])
-                        }
-                        Else
-                        {
-                            SubMenu := KeyValue[1]
-                        }
+                        MenuName := SubStr(MenuLine[1], 2)
+                        Label := Func("MenuRun").Bind(MenuLine[2])
+                        Menu, % SectionName SubMenuLine[1], Add, % MenuName, % Label
+                        Menu, % SectionName SubMenuLine[1], Icon, % MenuName, % GetPluginIcon(MenuLine[2])
                     }
                     Else
                     {
-                        Menu, % SectionName SubMenu, Add
+                        SubMenuLine := MenuLine
+                        Menu, % SectionName SubMenuLine[1], Add
+                        Menu, % SectionName SubMenuLine[1], DeleteAll
                     }
                 }
                 Else
                 {
-                    If SubMenu
+                    If SubMenuLine
                     {
-                        Menu, % SectionName, Add, % SubStr(SubMenu, 2), % ":" SectionName SubMenu
+                        Menu, % SectionName, Add, % SubStr(SubMenuLine[1], 2), % ":" SectionName SubMenuLine[1]
+                        If RegExMatch(SubMenuLine[2], "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
+                        {
+                            Menu, % SectionName, Icon, % SubStr(SubMenuLine[1], 2), % Out["ICON"]
+                        }
                     }
-                    SubMenu := false
-                    Label := Func("MenuRun").Bind(KeyValue[2])
+                    SubMenuLine :=
+                    Label := Func("MenuRun").Bind(MenuLine[2])
                     ; SectionName: Menu.Folder
-                    ; KeyValue[1]: Edit by &SublimeText
-                    ; KeyValue[2]: [SublimeText]([sublime_text.ico])?...
-                    Menu, % SectionName, Add, % KeyValue[1], % Label
-                    Menu, % SectionName, Icon, % KeyValue[1], % GetPluginIcon(KeyValue[2])
+                    ; MenuLine[1]: Edit by &SublimeText
+                    ; MenuLine[2]: [SublimeText]([sublime_text.ico])?...
+                    Menu, % SectionName, Add, % MenuLine[1], % Label
+                    Menu, % SectionName, Icon, % MenuLine[1], % GetPluginIcon(MenuLine[2])
                 }
             }
         }
     }
 }
 MenuRun(IniValue, ItemName, ItemPos, MenuName) {
-    ; MsgBox % "IniValue: " IniValue "`nItemName: " ItemName "`nItemPos: " ItemPos "`nMenuName: " MenuName
     ; IniValue: [AHKHelp]([AHKHelp.ico])?...
     ; ItemName: AHK &Help
     ; ItemPos: 3
     ; MenuName: Menu.Text
-    If RegExMatch(IniValue, "O)^\[(?<NAME>.+?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
+    If RegExMatch(IniValue, "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
     {
         EnvGet, PathExt, PATHEXT
         PathExt := StrSplit(PathExt ";.AHK", ";")
@@ -153,62 +144,37 @@ MenuRun(IniValue, ItemName, ItemPos, MenuName) {
                 OutPluginDir := A_ScriptDir "\plugins\" Out["NAME"]
 
                 If GetKeyState("Shift", "P") {
-                    Run, % "*RunAs " PluginPath " " Out["PARAMETER"] " " Cube, % OutPluginDir, UseErrorLevel
+                    Run, % "*RunAs " PluginPath " " Out["PARAMETER"] " " MyClipBoard, % OutPluginDir, UseErrorLevel
                 } Else If GetKeyState("Ctrl", "P") {
                     Run, % "Edit " PluginPath, % OutPluginDir, UseErrorLevel
                 } Else {
-                    Run, % PluginPath " " Out["PARAMETER"] " " Cube, % OutPluginDir, UseErrorLevel
+                    Run, % PluginPath " " Out["PARAMETER"] " " MyClipBoard, % OutPluginDir, UseErrorLevel
                 }
                 Break
             }
         }
     }
 }
-MenuShow() {
-    If (Cube != CubeBefore)
-    {
-        CubeBefore := Cube
-
-        Menu, MainMenu, Add
-        Menu, MainMenu, DeleteAll
-        MenuItemName := (StrLen(Cube) > 30)?SubStr(Cube, 1, 27) "...":Cube
-        Menu, MainMenu, Add, % MenuItemName, MenuShow
-        Menu, MainMenu, Icon, % MenuItemName, % "icons\images.dll\imageres-234.ico"
-        For Index, cType in GetTypes()
-        {
-            Menu, MainMenu, Add
-            Menu, MainMenu, Add, % cType, % ":" cType
-            If RegExMatch(cType, "^Menu\.Folder(\.\w+)*$") {
-                Menu, MainMenu, Icon, % cType, % "icons\images.dll\imageres-265.ico"
-            } Else If RegExMatch(cType, "^Menu\.File(\.\w+)*$") {
-                Menu, MainMenu, Icon, % cType, % GetFileIcon(Cube), , % A_ScreenDPI / 6
-            } Else If RegExMatch(cType, "^Menu\.Text(\.\w+)*$") {
-                Menu, MainMenu, Icon, % cType, % "icons\images.dll\imageres-247.ico"
-            }
-        }
-    }
-    Menu, MainMenu, Show
-}
 ;===============================================================================
-GetTypes() {
+GetTypes(Config) {
     _Types := []
-    If Cube
+    If MyClipBoard
     {
-        _FileExist := FileExist(Cube)
+        _FileExist := FileExist(MyClipBoard)
         If _FileExist
         {
-            If InStr(FileExist(Cube), "D")
+            If InStr(FileExist(MyClipBoard), "D")
             {
                 _Types.push("Menu.Folder")
             }
             _Types.push("Menu.File")
         }
 
-        For REType, REs in IniReadArrayValue("RegularExpression")
+        For REType, REs in Config.ReadArrayValue("RegularExpression")
         {
             For _, RE in REs
             {
-                If RegExMatch(Cube, RE)
+                If RegExMatch(MyClipBoard, RE)
                 {
                     _Types.push(REType)
                     Break
@@ -229,21 +195,14 @@ GetFileIcon(File) {
     Return A_AhkPath
 }
 GetPluginIcon(MenuName) {
-    RegExMatch(MenuName, "O)^\[(?<NAME>.+?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
+    RegExMatch(MenuName, "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
     If Out["ICON"] {
-        Icon := A_ScriptDir "\icons\" Out["ICON"]
-        ; msgbox % Icon
-        If FileExist(Icon)
-        {
-            Return Icon
-        }
         Return Out["ICON"]
     }
     PluginPath := A_ScriptDir "\plugins\" Out["NAME"]
     For Key, Value in [".ico", ".png", ".exe"]
     {
         Icon := PluginPath "\" Out["NAME"] Value
-        ; msgbox % Icon
         If FileExist(Icon)
         {
             Return Icon
@@ -256,13 +215,14 @@ CapsLockPressed() {
     Clipboard := ""
     Send ^c
     ClipWait, 0.5, 1
-    Cube := Trim(Clipboard)
+    MyClipBoard := Trim(Clipboard)
     Clipboard := ClipBoardBak
 
     If Not ErrorLevel
     {
-        MenuCreate()
-        MenuShow()
+        Config := new IniConfig("settings.ini")
+        MenuCreate(Config)
+        MenuShow(Config)
     }
 }
 CapsLockSwitched() {
