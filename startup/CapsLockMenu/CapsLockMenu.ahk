@@ -135,7 +135,7 @@ MenuRun(IniValue, ItemName, ItemPos, MenuName) {
     If RegExMatch(IniValue, "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
     {
         EnvGet, PathExt, PATHEXT
-        PathExt := StrSplit(PathExt ";.AHK", ";")
+        PathExt := StrSplit(".AHK;" PathExt, ";")
         For i, Ext in PathExt
         {
             PluginPath := A_ScriptDir "\plugins\" Out["NAME"] "\" Out["NAME"] Ext
@@ -215,7 +215,7 @@ CapsLockPressed() {
     Clipboard := ""
     Send ^c
     ClipWait, 0.5, 1
-    MyClipBoard := Trim(Clipboard)
+    MyClipBoard := Trim(Clipboard, " `t`r`n")
     Clipboard := ClipBoardBak
 
     If Not ErrorLevel And MyClipBoard
