@@ -1,10 +1,8 @@
 #NoEnv
-#SingleInstance force
+#SingleInstance Force
+
 DetectHiddenWindows On
 SetTitleMatchMode RegEx
-
-Menu, Tray, UseErrorLevel
-Menu, Tray, Icon, imageres.dll,307
 
 Loop, Parse, % "Path||Edit|Reload||Pause|Suspend||Exit||History|Variables|HotKeys|Info", |
 {
@@ -16,34 +14,18 @@ Loop, Parse, % "Path||Edit|Reload||Pause|Suspend||Exit||History|Variables|HotKey
         RegRead, EDOTOR, % "HKCR\AutoHotkeyScript\Shell\Edit\Command"
         Menu, LV_Menu, Icon, % A_LoopField, % Substr(RegExReplace(EDOTOR, "\.exe.*$", ".exe"), 2)
     }
-    If (A_LoopField == "Reload")
-        Menu, LV_Menu, Icon, % A_LoopField
-    If (A_LoopField == "Suspend")
-        Menu, LV_Menu, Icon, % A_LoopField
-    If (A_LoopField == "Pause")
-        Menu, LV_Menu, Icon, % A_LoopField
-    If (A_LoopField == "Exit")
-        Menu, LV_Menu, Icon, % A_LoopField, imageres.dll,162
-    If (A_LoopField == "Info")
-        Menu, LV_Menu, Icon, % A_LoopField, imageres.dll,77
 }
-SetTimer, Label_LV_REFRESH, 500
-OnMessage(0x404, "AHK_NOTIFYICON")
-Return
+Global ListViewInfo :=
+Gui +OwnDialogs +HwndHWND +Resize
+Gui Margin, 0, 0
+Gui Font, , Consolas
+Gui Add, ListView, Grid vListview gLV_Event, % "HWND|PID|Pause|Suspend|ScriptFullPath"
+Gui Show, w800 h300 Center
 
-ShowGUI:
-    Gui +OwnDialogs +HwndHWND -DPIScale +Resize -MinimizeBox
-    Gui Margin, 0, 0
-    Gui Font, , Consolas
-    Gui Add, ListView, Grid vListview gLV_Event, HWND|PID|Pause|Suspend|ScriptFullPath
-    Gui Show, w1300 h450 Center
-    ListViewInfo :=
+SetTimer, Label_LV_REFRESH, 100
 Return
 
 Label_LV_REFRESH:
-    If Not WinExist("ahk_id " HWND)
-        Return
-
     ProcessInfo := GetProcessInfo()
     If IsStateChanged(ProcessInfo, ListViewInfo)
     {
@@ -81,7 +63,7 @@ Return
 
 GuiClose:
 GuiEscape:
-    Gui, Destroy
+    ExitApp, 0
 Return
 
 GetSelectedIDS(IDIndex := 1) {
@@ -208,21 +190,3 @@ GetProcessInfo() {
     }
 Return ProcessInfo
 }
-
-AHK_NOTIFYICON(wParam, lParam) {
-    Static WM_USER = 0x0400 ; https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-user
-    Static WM_LBUTTONUP = 0x202
-    Static _______ := OnMessage(WM_USER + 4, "AHK_NOTIFYICON")
-    If (lParam = WM_LBUTTONUP)
-        show()
-}
-
-show() {
-    global HWND
-    If WinExist("ahk_id " HWND)
-        Gui, Destroy
-    Else
-        Gosub, ShowGUI
-}
-
-; #`::show()
