@@ -4,6 +4,10 @@
 DetectHiddenWindows On
 SetTitleMatchMode RegEx
 
+If (A_Args[1] = "ignore") {
+    ExitApp, 0
+}
+
 Loop, Parse, % "Path||Edit|Reload||Pause|Suspend||Exit||History|Variables|HotKeys|Info", |
 {
     Menu, LV_Menu, Add, % A_LoopField, MenuHandler

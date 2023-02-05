@@ -9,6 +9,7 @@ Menu, Tray, Icon, % "icons\images.dll\imageres-234.ico"
 Menu, MainMenu, UseErrorLevel
 
 Global MyClipBoard
+Global RegOfMenuLine := "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$"
 Return
 ;===============================================================================
 class IniConfig
@@ -50,7 +51,7 @@ TrayIconMessage(wParam, lParam) {
     Static WM_MBUTTONUP = 0x0208
     static ____________ = OnMessage(WM_USER + 4, "TrayIconMessage")
     If (lParam = WM_LBUTTONUP) {
-        SplitPath, % A_ScriptFullPath, , OutDir
+        SplitPath, A_ScriptFullPath, , OutDir
         Run, % OutDir
     } Else If (lParam = WM_MBUTTONUP) {
         Reload
@@ -110,7 +111,7 @@ MenuCreate(Config)
                     If SubMenuLine
                     {
                         Menu, % SectionName, Add, % SubStr(SubMenuLine[1], 2), % ":" SectionName SubMenuLine[1]
-                        If RegExMatch(SubMenuLine[2], "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
+                        If RegExMatch(SubMenuLine[2], RegOfMenuLine, Out)
                         {
                             Menu, % SectionName, Icon, % SubStr(SubMenuLine[1], 2), % Out["ICON"]
                         }
@@ -132,7 +133,7 @@ MenuRun(IniValue, ItemName, ItemPos, MenuName) {
     ; ItemName: AHK &Help
     ; ItemPos: 3
     ; MenuName: Menu.Text
-    If RegExMatch(IniValue, "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
+    If RegExMatch(IniValue, RegOfMenuLine, Out)
     {
         EnvGet, PathExt, PATHEXT
         PathExt := StrSplit(".AHK;" PathExt, ";")
@@ -195,7 +196,7 @@ GetFileIcon(File) {
     Return A_AhkPath
 }
 GetPluginIcon(MenuName) {
-    RegExMatch(MenuName, "O)^\[(?<NAME>.*?)\](\[(?<ICON>.+?)\])?(?<PARAMETER>.+)?$", Out)
+    RegExMatch(MenuName, RegOfMenuLine, Out)
     If Out["ICON"] {
         Return Out["ICON"]
     }

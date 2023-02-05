@@ -31,7 +31,7 @@ LoopRun(start) {
 
 Run(ahk) {
     SplitPath, ahk, , ahkDir, , ahkNameNoExt
-    cli := ahkDir . ahkNameNoExt . ".cli"
+    cli := ahkDir . "\" . ahkNameNoExt . ".cli"
     If FileExist(cli)
     {
         FileReadLine, params, % cli, 1
