@@ -144,12 +144,13 @@ MenuRun(IniValue, ItemName, ItemPos, MenuName) {
             {
                 OutPluginDir := A_ScriptDir "\plugins\" Out["NAME"]
 
+                Cmd := PluginPath " " Out["PARAMETER"] " """ MyClipBoard """"
                 If GetKeyState("Shift", "P") {
-                    Run, % "*RunAs " PluginPath " " Out["PARAMETER"] " " MyClipBoard, % OutPluginDir, UseErrorLevel
+                    Run, % "*RunAs " Cmd, % OutPluginDir, UseErrorLevel
                 } Else If GetKeyState("Ctrl", "P") {
                     Run, % "Edit " PluginPath, % OutPluginDir, UseErrorLevel
                 } Else {
-                    Run, % PluginPath " " Out["PARAMETER"] " " MyClipBoard, % OutPluginDir, UseErrorLevel
+                    Run, % Cmd, % OutPluginDir, UseErrorLevel
                 }
                 Break
             }
