@@ -64,3 +64,4 @@
 :*:dokcer::docker
 :*:docekr::docker
 :*:clone::clone
+:*:isntall::install
