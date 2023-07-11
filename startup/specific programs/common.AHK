@@ -8,7 +8,12 @@ GroupAdd, advanced_editors, ahk_exe webstorm64.exe
 GroupAdd, advanced_editors, ahk_exe jetbrains_client64.exe
 GroupAdd, advanced_editors, ahk_exe Feishu.exe
 
+#If WinActive("ahk_exe SearchHost.exe")
+    ~LWin Up::SendEvent, !{Space} ; Flow.launcher
+#If WinActive("ahk_exe Flow.Launcher.exe")
+    LWin Up::SendEvent, !{Space} ; Flow.launcher
 #If Not WinActive("ahk_group advanced_editors")
+    ^+p::SendEvent, !{Space} ; Flow.launcher
     ^Enter::
         Send, {End}{Enter}
         Return

@@ -1,23 +1,14 @@
 #SingleInstance, Force
 #NoTrayIcon
 
+#If WinActive("ahk_class WorkerW")
+    ^h::ShowHideFiles()
 #If WinActive("ahk_class CabinetWClass")
-#If WinActive("ahk_class CabinetWClass") && MouseIsOver("CabinetWClass","")
-#If WinActive("ahk_class CabinetWClass") && MouseIsOver("CabinetWClass","NetUIHWND1")
-    Esc::PostMessage, 0x112, 0xF060,,, A
-    MButton::^n
-#If WinActive("ahk_class CabinetWClass") && MouseIsOver("CabinetWClass","ToolbarWindow323")
-    MButton::
-        ControlGetText, Clipboard, ToolbarWindow323, A
-        RegExMatch(Clipboard, "i)[a-z]{1}:\\.*", SubPat)
-        Clipboard := SubPat
-        Return
-#If WinActive("ahk_class CabinetWClass") && MouseIsOver("CabinetWClass","DirectUIHWND3")
-    MButton::!Up
+    ^h::ShowHideFiles()
 #If WinActive("ahk_class CabinetWClass") && MouseIsOver("CabinetWClass","DirectUIHWND2")
     MButton::!Up
-
-; TrayTip, CreateFileMacro, Ctrl+Shift+M to create a new file in the current explorer window
+#If WinActive("ahk_class CabinetWClass") && MouseIsOver("CabinetWClass","DirectUIHWND3")
+    MButton::!Up
 #If WinActive("ahk_class CabinetWClass") || WinActive("ahk_class Progman") || WinActive("ahk_class WorkerW")
     ^+m::CurrentWindowNewFile() ;Ctrl+Shift+M Create new, empty, entensionless file in the active explorer window or on the desktop
 #If
@@ -28,10 +19,12 @@ CurrentWindowNewFile() {
         VarSetCapacity(_hwnd, 4, 0)
         explorerWin := shellWindows.FindWindowSW(0, "", 8, ComObj(0x4003, &_hwnd), 1)
     } Else {
-        hwndActive := HexToDecimal(WinExist())
-        Loop % shellWindows.Count+1 { ; +1?
+        hwnd := WinExist()
+        hwndActive := HexToDecimal(hwnd)
+        WinGetTitle, title, % "ahk_id " hwnd
+        Loop % shellWindows.Count {
             explorerWin := shellWindows.Item(A_Index-1)
-            If (hwndActive = explorerWin.Hwnd)
+            If (hwndActive = explorerWin.Hwnd && explorerWin.Document.Folder.Self.Path = title)
                 Break
         }
     }
@@ -71,4 +64,21 @@ MouseIsOver(class,control="") {
     WinGetClass, MouseOverWinClass, % "ahk_id " MouseOverWinID
     If ((MouseOverWinClass = class) && ((MouseOverControl = control) || !control))
         Return True
+}
+
+ShowHideFiles() {
+    RegRead, HiddenFiles_Status, HKEY_CURRENT_USER, Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced, Hidden
+    If (HiddenFiles_Status = 2) {
+        RegWrite, REG_DWORD, HKEY_CURRENT_USER, Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced, Hidden, 1
+    } Else {
+        RegWrite, REG_DWORD, HKEY_CURRENT_USER, Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced, Hidden, 2
+    }
+    WinGetClass, CabinetWClass
+    PostMessage, 0x111, 28931,,, A
+
+    shellWindows := ComObjCreate("Shell.Application").Windows
+    Loop % shellWindows.Count {
+        explorerWin := shellWindows.Item(A_Index-1)
+        explorerWin.Refresh()
+    }
 }
