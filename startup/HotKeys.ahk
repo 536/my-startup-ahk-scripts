@@ -2,7 +2,7 @@
 #NoTrayIcon
 
 ;-------------------------------------------------------------------------------
-^Space::WinSet, AlwaysOnTop, Toggle, A
+; ^Space::WinSet, AlwaysOnTop, Toggle, A  ; use powertoys instead(ctrl+win+t)
 ;-------------------------------------------------------------------------------
 ^#c::Run, % A_ComSpec " /K cd /d " CurrentFolder(), , UseErrorLevel
 ^+#c::Run, % "*Runas " A_ComSpec " /K cd /d " CurrentFolder(), , UseErrorLevel
