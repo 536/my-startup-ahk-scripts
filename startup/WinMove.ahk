@@ -7,6 +7,8 @@ DetectHiddenWindows, Off
 CoordMode, Mouse
 
 ~LButton & RButton::
+    If WinActive("ahk_exe mstsc.exe") ; except mstsc.exe
+        Return
     If WinActive("ahk_class WorkerW") ; except desktop
         Return
     If WinActive("Windows.UI.Core.CoreWindow","") ; except start menu
